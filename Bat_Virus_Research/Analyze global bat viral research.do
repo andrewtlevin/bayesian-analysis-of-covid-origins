@@ -1,10 +1,20 @@
-* Import GDP Per Capita data (World Bank)
-import excel using "Excel/World Bank 2019 GDPPC.xlsx", ///
+* Import World Bank data on GDP per capita as of 2019
+local dirname = "Global Bat Viral Research"
+import excel using "`dirname'/World Bank 2019 GDPPC.xlsx", ///
   clear sheet("Data") firstrow case(lower)
 save "Temp/GDPPC_2019.dta", replace
   
-* Import data from Phelps et al. (2010)
-import excel using "Excel/Phelps et al. 2019 Table S4.xlsx", ///
+* Import World Bank population data as of 2019
+* Note: this spreadsheet also includes GADM41 shapefile _ID 
+local dirname = "Global Bat Viral Research"
+import excel using "`dirname'/World Bank 2019 population data.xlsx", ///
+  clear firstrow case(lower)
+rename _id _ID  
+save "Temp/population_2019.dta", replace
+
+* Import bat virus research data from Phelps et al. (2010)
+local dirname = "Global Bat Viral Research"
+import excel using "`dirname'/Phelps et al. 2019 Table S4.xlsx", ///
   clear sheet("Data") firstrow case(lower)
 keep country isoalpha bat_covirus_papers 
 
@@ -17,14 +27,24 @@ sort isoalpha country
 by isoalpha: gen idvar = _n
 by isoalpha: egen batcov_papers = total(bat_covirus_papers) 
 keep if idvar==1
-drop idvar
+drop idvar bat_covirus_papers
 
-* Merge with GDP Per Capita data
-* Note: Taiwan GDPPC obtained from IMF 
+* Merge with data on gdp per capita
+* Note: Taiwan gdp per capita obtained from IMF 
+*       _merge = 1 for small islands & Kosovo
+*       _merge = 2 for World Bank aggregates
 merge 1:1 isoalpha using "Temp/GDPPC_2019.dta"
+list isoalpha country if _merge==1
+list isoalpha countryname if _merge==2
 keep if _merge==3 | isoalpha=="TWN"
 replace gdppc_2019 = 55244 if isoalpha=="TWN"
-drop _merge
+drop _merge countryname
+
+* Merge with population data 
+* Note: the Dutch part of St. Maarten gets dropped at this stage
+merge 1:1 isoalpha ///
+ using "Temp/population_2019.dta"
+keep if _merge==3 
 
 * Analyze data
 gen batcov_research = cond(batcov_papers >=5, batcov_papers, 0)
@@ -58,16 +78,10 @@ tabstat batcov_research ///
   pct_batcov_risk pct_nonusa_risk ///
   if batcov_research > 0, by(ccode) format stat(sum)
 
-* Merge with GADM41 country index file
-
-merge 1:1 isoalpha ///
- using "Datasets/global_population_gadm41_index.dta"
-drop if _merge < 3
-
 * Make illustrative maps 
 replace batcov_research=. if batcov_research==0
 grmap batcov_research ///
-  using "Datasets/gadm41_world_streamlined_shp.dta", ///
+  using "GADM41/gadm41_world_streamlined_shp.dta", ///
   id(_ID) clmethod(custom) clbreaks(5 10 25 50 100 200 500) ///
   fcolor(Reds) ndfcolor(eggshell) ///
   graphregion(color(ltblue*0.33)) ///
@@ -78,15 +92,14 @@ grmap batcov_research ///
 	label(7 "More than 200") size(medsmall) ///
     title("Research Papers" "Posted in PubMed", ///
 	      size(medsmall))  /// 
-	bmargin(125 0 5 0) ///
+	bmargin(20 0 5 0) ///
     region(lwidth(thick) lcolor(black) fcolor(white))) ///
   name(batcov_research, replace)
-graph export "Figures/batcov_research_map.emf", replace
-graph export "Figures/batcov_research_map.tif", replace
+graph export "../../Figures/batcov_research_map.tif", replace
 
 replace batcov_risk_index = . if batcov_risk_index < 0.25
 grmap batcov_risk_index ///
-  using "Datasets/gadm41_world_streamlined_shp.dta", ///
+  using "GADM41/gadm41_world_streamlined_shp.dta", ///
   id(_ID) clmethod(custom) clbreaks(.25 0.5 0.75 1 10) ///
   fcolor(Reds) ndfcolor(eggshell) ///
   graphregion(color(ltblue*0.33)) ///
@@ -95,9 +108,7 @@ grmap batcov_risk_index ///
     label(3 "0.5 to 0.75") label(4 "0.75 to 1.5") ///
 	label(5 "More than 1.5") size(medium) ///
     title("Risk Assessment Index", size(medsmall))  /// 
-	bmargin(125 0 5 0) ///
+	bmargin(20 0 5 0) ///
     region(lwidth(thick) lcolor(black) fcolor(white))) ///
   name(batcov_risk, replace)
-graph export "Figures/batcov_risk_map.emf", replace
-graph export "Figures/batcov_risk_map.tif", replace
-
+graph export "../../Figures/batcov_risk_map.tif", replace
