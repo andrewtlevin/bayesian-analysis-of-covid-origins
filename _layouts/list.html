@@ -1,0 +1,83 @@
+---
+layout: default
+---
+
+<!-- Extract and display the folder name as a bold heading -->
+{% assign folder_name = page.dir | split: "/" | last | replace: "_", " " %}
+{% unless folder_name == "" or folder_name == "." or folder_name == nil %}
+  <h1><strong>{{ folder_name }}</strong></h1>
+{% else %}
+  <h1><strong>Root Folder</strong></h1>
+{% endunless %}
+
+<h2>Folder Contents</h2>
+<ul>
+  {% assign found_files = false %}
+  {% for file in site.static_files %}
+    {% if file.path contains page.dir %}
+      {% assign relative_path = file.path | remove_first: page.dir %}
+      {% if relative_path contains "/" %}
+        {% assign is_in_subfolder = true %}
+      {% else %}
+        {% assign is_in_subfolder = false %}
+      {% endif %}
+      {% unless is_in_subfolder %}
+        {% assign found_files = true %}
+        <li>
+          <a href="{{ file.path | relative_url }}">{{ file.name }}</a>
+        </li>
+      {% endunless %}
+    {% endif %}
+  {% endfor %}
+  {% unless found_files %}
+    <p>No files available in this folder.</p>
+  {% endunless %}
+</ul>
+
+{% assign found_subfolders = false %}
+{% assign subfolders = "" | split: "," %} <!-- Ensure subfolders is initialized as an empty array -->
+
+<!-- Begin checking for subfolders -->
+{% for subpage in site.pages %}
+  {% assign path_size = page.path | size | default: 0 %}
+  {% assign sliced_path = subpage.path | slice: 0, path_size %}
+  {% assign is_correct_path = sliced_path == page.path %}
+  {% assign is_different_path = subpage.path != page.path %}
+  
+  {% if is_correct_path and is_different_path %}
+    {% assign folder_name = subpage.dir | remove: page.dir | split: "/" | first %}
+    {% unless folder_name == "" or folder_name == "." or folder_name == nil %}
+      {% assign folder_url = folder_name | append: "/" %}
+      {% unless subfolders contains folder_name %}
+        {% assign found_subfolders = true %}
+        {% break %} <!-- Exit loop early once a subfolder is found -->
+      {% endunless %}
+    {% endunless %}
+  {% endif %}
+{% endfor %}
+
+<!-- Display "Subfolders" only if there are subfolders -->
+{% if found_subfolders %}
+  <h2>Subfolders</h2>
+  <ul>
+    {% for subpage in site.pages %}
+      {% assign path_size = page.path | size | default: 0 %}
+      {% assign sliced_path = subpage.path | slice: 0, path_size %}
+      {% assign is_correct_path = sliced_path == page.path %}
+      {% assign is_different_path = subpage.path != page.path %}
+      
+      {% if is_correct_path and is_different_path %}
+        {% assign folder_name = subpage.dir | remove: page.dir | split: "/" | first %}
+        {% unless folder_name == "" or folder_name == "." or folder_name == nil %}
+          {% assign folder_url = folder_name | append: "/" %}
+          {% unless subfolders contains folder_name %}
+            <li>
+              <a href="{{ folder_url }}">{{ folder_name }}</a>
+            </li>
+          {% endunless %}
+        {% endunless %}
+      {% endif %}
+    {% endfor %}
+  </ul>
+{% endif %}
+
