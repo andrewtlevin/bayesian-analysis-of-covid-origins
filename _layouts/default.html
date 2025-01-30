@@ -17,6 +17,8 @@
       <header>
         <h1><a href="{{ "/" | absolute_url }}">Bayesian Analysis of COVID-19 Origins</a></h1>
 
+        <p>{{ site.description | default: site.github.project_tagline }}</p>
+
         {% if site.logo %}
           <img src="{{site.logo | relative_url}}" alt="Logo" />
         {% endif %}
