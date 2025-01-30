@@ -4,13 +4,15 @@ local leg_Y = 30.6192
 
 * Create point dataset of external tests with vendor cases 
 use "Datasets/external_test_locations.dta", clear
+rename _CX case_X
+rename _CY case_Y
 gen type_flag = 0
 append using "Datasets/vendor_case_locations.dta"
 replace type_flag = ncases if missing(type_flag)
 expand 2 if type_flag > 0, gen(extra_flag)
 replace type_flag = type_flag + 3 if extra_flag
-replace _CX = `leg_X' if extra_flag
-replace _CY = `leg_Y' if extra_flag				
+replace case_X = `leg_X' if extra_flag
+replace case_Y = `leg_Y' if extra_flag				
 save "Temp/cases_and_external_tests.dta", replace
 
 * Create polygon dataset showing shops with BOLD > 1200
@@ -21,9 +23,7 @@ use "Datasets/bold1200_mammal_shop_list.dta", clear
 merge 1:m _ID using "Maps/Huanan_market_map_shp.dta"
 keep if _merge==3
 append using "Maps/Huanan_main_buildings_shp.dta"
-gen structure = real(substr(string(_ID),1,2))
-drop if inlist(structure,30,31,44) ///
-      | inlist(_ID,1001030,1001031,1001044)
+drop if inlist(_ID,1001030,1001031,1001044)
 gen type_flag = cond(rdflag==1, 4, ///
                 cond(rdflag==0, 3, ///
                 cond(_ID==1001029, 2, 1)))
@@ -63,11 +63,9 @@ replace labeltxt = "{bf:Cart}" if env_code=="0033" & dup_flag==1
 save "Temp/huanan_labels.dta", replace
 
 * Map tests vs. all confirmed cases 
-* Note: streamlined map excludes northeast outlying structures
 quietly colorpalette HTML, global
 use "Datasets/environmental_test_vendor_index.dta", clear
-gen structure = real(substr(string(_ID),1,2))
-drop if inlist(structure,30,31,44)
+drop if inlist(_ID,30101,44101) | inrange(_ID,31100,31299)
 grmap sarscov2_flag ///
   using "Maps/Huanan_streamlined_map_shp.dta", ///
   id(_ID) clmethod(unique) ///
@@ -75,10 +73,10 @@ grmap sarscov2_flag ///
   osize(vthin ..) ocolor(black ..) ndsize(vthin) ndocolor(black) ///
   polygon(data("Temp/enhanced_building_map_shp.dta") ///
 	by(type_flag) fcolor(none ..) opattern(solid ..) ///
-	ocolor(gray $MediumPurple $Purple $Blue) osize(thick medthick ..)) ///
+	ocolor(gray $MediumPurple $Green $Blue) osize(thick medthick ..)) ///
   point(data("Temp/cases_and_external_tests.dta") ///
-    xcoord(_CX) ycoord(_CY) legenda(on) ///
-	by(type_flag) ocolor($Purple none ..) osize(medthick none ..) ///
+    xcoord(case_X) ycoord(case_Y) legenda(on) ///
+	by(type_flag) ocolor($Green none ..) osize(medthick none ..) ///
 	fcolor($LightPink $DarkViolet ..) ///
 	shape(square triangle circle diamond triangle circle diamond) ///
 	size(0.75 0.5 0.5 0.4 1 1 1)) ///   
@@ -96,15 +94,14 @@ grmap sarscov2_flag ///
 	lcolor($DodgerBlue $SlateGray $Gray) lpattern(solid dash solid)) ///
   legend(ring(0) pos(5) col(2) colfirst colgap(7) ///
     bmargin(0 10 0.5 0) ///
-	subtitle("{bf:Swab Samples                  Vendor Cases}", just(left) size(vsmall)) ///
-	order(4 3 8 7 13 14 15) ///
+	order(- "{bf:Swab Samples}" 4 3 8 7 - "{bf:Vendor Cases}" 13 14 15) ///
 	label(4 "Positive RT-qPCR") ///
 	label(3 "Negative RT-qPCR") ///
-	label(8 "Raccoon Dog mt-DNA") ///
-	label(7 "Other Mammal mt-DNA") ///
-	label(13 " N = 1") ///
-	label(14 " N = 2") ///
-	label(15 " N = 3") ///
+	label(8 "Raccoon Dog DNA") ///
+	label(7 "Other Mammal DNA") ///
+	label(13 "   N = 1") ///
+	label(14 "   N = 2") ///
+	label(15 "   N = 3") ///
     region(lcolor(black) fcolor($White))) ///
   plotregion(margin(2 2 2 2)) name(Tests_vs_Cases, replace) 
 graph export "Figures/Tests_versus_Cases.tif", replace
