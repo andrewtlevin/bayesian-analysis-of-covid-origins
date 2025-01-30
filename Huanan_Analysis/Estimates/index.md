@@ -1,4 +1,6 @@
 ---
 layout: list
-title: "Huanan Analysis - Stata Estimation Output"
----
+title: "Huanan Market Analysis"
+--- 
+
+

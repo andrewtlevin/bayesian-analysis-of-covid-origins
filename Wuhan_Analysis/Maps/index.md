@@ -1,5 +1,5 @@
 ---
 layout: list
-title: "Wuhan Case Analysis - Maps"
----
- 
+title: "Wuhan Case Analysis"
+--- 
+

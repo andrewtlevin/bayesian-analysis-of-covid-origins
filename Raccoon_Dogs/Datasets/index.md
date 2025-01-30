@@ -1,4 +1,4 @@
 ---
 layout: list
-title: "Raccoon Dog Habitats - Stata Datasets"
+title: "Raccoon Dog Habitats"
 ---

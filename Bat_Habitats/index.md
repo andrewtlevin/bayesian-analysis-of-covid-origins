@@ -1,5 +1,4 @@
 ---
 layout: list
-title: "Bat Habitats Folder"
+title: "Bat Habitats"
 ---
-

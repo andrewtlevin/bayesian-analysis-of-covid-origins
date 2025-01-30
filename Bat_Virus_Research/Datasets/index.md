@@ -1,5 +1,4 @@
 ---
 layout: list
-title: "Bat Virus Research Datasets"
----
-
+title: "Bat Virus Research"
+--- 

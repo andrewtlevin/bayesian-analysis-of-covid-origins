@@ -1,6 +1,5 @@
 ---
 layout: list
-title: "Bat Virus Research - Figures"
----
- 
+title: "Bat Virus Research"
+--- 
  

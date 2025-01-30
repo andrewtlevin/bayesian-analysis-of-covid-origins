@@ -1,4 +1,4 @@
 ---
 layout: list
-title: "Bat Habitats - Datasets Folder"
----
+title: "Bat Habitats"
+--- 
