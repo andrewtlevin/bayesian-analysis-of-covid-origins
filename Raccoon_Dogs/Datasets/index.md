@@ -1,4 +1,4 @@
 ---
 layout: list
-title: "Raccoon Dog Habitats"
+title: "Raccoon Dog Locations"
 ---
